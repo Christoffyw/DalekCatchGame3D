@@ -1,8 +1,12 @@
 package me.ChristopherW.core.custom.Animations;
 
+import java.util.ArrayList;
+
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 
 import me.ChristopherW.core.Animation;
+import me.ChristopherW.core.custom.Dalek;
 import me.ChristopherW.core.entity.Entity;
 import me.ChristopherW.core.utils.GlobalVariables;
 import me.ChristopherW.test.Launcher;
@@ -48,7 +52,7 @@ public class TardisTeleport implements Animation {
     }
 
     boolean teleport = false;
-    boolean showDoctor = false;
+    public boolean showDoctor = false;
 
     @Override
     public void tick(float time) {
@@ -61,8 +65,19 @@ public class TardisTeleport implements Animation {
         }
         else if(timeElapsed >= 6) {
             if(!showDoctor) {
-                Launcher.getGame().board.getDoctor().setPosition(Launcher.getGame().board.getGridSpaceFromWorld(endPos));
-                Launcher.getGame().board.getDoctor().getEntity().setVisible(true);
+                Vector2i start = Launcher.getGame().board.getGridSpaceFromWorld(startPos);
+                Vector2i end = Launcher.getGame().board.getGridSpaceFromWorld(endPos);
+                if(Launcher.getGame().board.getData()[end.y][end.x] instanceof Dalek) {
+                    Launcher.getGame().board.getData()[start.y][start.x] = null;
+                } else {
+                    Launcher.getGame().board.getDoctor().setPosition(end);
+                    Launcher.getGame().board.getDoctor().getEntity().setVisible(true);
+                }
+
+                ArrayList<Dalek> daleks = Launcher.getGame().board.getDaleks();
+                for (Dalek dalek : daleks) {
+                    dalek.advanceTowardsDoctor();
+                }
                 showDoctor = true;
             }
             tardis.getPosition().lerp(new Vector3f(endPos).add(0,20,0), (timeElapsed-6f)/20f);

@@ -7,6 +7,7 @@ import me.ChristopherW.core.IShader;
 import me.ChristopherW.core.ShaderManager;
 import me.ChristopherW.core.entity.Entity;
 import me.ChristopherW.core.entity.Material;
+import me.ChristopherW.core.utils.GlobalVariables;
 import me.ChristopherW.core.utils.Transformation;
 
 public class DefaultShader extends ShaderManager implements IShader {
@@ -40,6 +41,7 @@ public class DefaultShader extends ShaderManager implements IShader {
             this.createUniform("viewMatrix");
             this.createUniform("m3x3InvTrans");
             this.createUniform("lightSpaceMatrix");
+            this.createUniform("shadowFiltering");
             this.createMaterialUniform("material");
         } catch (Exception e) {
             e.printStackTrace();
@@ -55,6 +57,7 @@ public class DefaultShader extends ShaderManager implements IShader {
         this.setUniform("viewMatrix", Transformation.createViewMatrix(camera));
         this.setUniform("m3x3InvTrans", Transformation.createInvTransMatrix(modelMatrix));
         this.setUniform("lightSpaceMatrix", camera.getLightSpaceMatrix());
+        this.setUniform("shadowFiltering", GlobalVariables.SHADOW_FILTERING);
         this.setUniform("material", entity.getModel().getMaterial());
     }
     

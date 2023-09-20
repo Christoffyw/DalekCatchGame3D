@@ -8,6 +8,10 @@ import org.lwjgl.glfw.GLFW;
 
 public class MouseInput {
     private final Vector2d previousPos, currentPos;
+    public Vector2d getCurrentPos() {
+        return currentPos;
+    }
+
     private final Vector2f displVec;
 
     private boolean inWindow = false, leftButtonPress = false, rightButtonPress = false;

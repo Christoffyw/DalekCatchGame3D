@@ -13,6 +13,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import me.ChristopherW.core.ObjectLoader;
 import me.ChristopherW.core.WindowManager;
+import me.ChristopherW.core.custom.UI.UIScreens.MainMenu;
 import me.ChristopherW.core.entity.Texture;
 import me.ChristopherW.core.utils.GlobalVariables;
 import me.ChristopherW.test.Launcher;
@@ -32,6 +33,8 @@ public class GUIManager {
 
     public void render() {
         ImBoolean p_open = new ImBoolean();
+        if(currentScreen != "")
+            screens.get(currentScreen).render(p_open, this);
     }
 
     public GUIManager(WindowManager window) {
@@ -46,12 +49,14 @@ public class GUIManager {
         fontConfig.setGlyphRanges(fontAtlas.getGlyphRangesDefault());
         fontConfig.setPixelSnapH(true);
         fontAtlas.addFontDefault();
-        font = fontAtlas.addFontFromFileTTF("assets/fonts/mont-heavy.ttf", 34f, fontConfig);
-        fontSmall = fontAtlas.addFontFromFileTTF("assets/fonts/mont-heavy.ttf", 17f, fontConfig);
+        font = fontAtlas.addFontFromFileTTF("assets/fonts/who.ttf", 34f, fontConfig);
+        fontSmall = fontAtlas.addFontFromFileTTF("assets/fonts/who.ttf", 17f, fontConfig);
         fontAtlas.build();
         fontConfig.destroy();
 
         // initialize screens
+        screens.put("MainMenu", new MainMenu());
+        currentScreen = "MainMenu";
 
         // call the start method for each screen
         for(IGUIScreen screen : screens.values()) {

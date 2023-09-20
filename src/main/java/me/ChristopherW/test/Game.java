@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.joml.Matrix4f;
+import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
@@ -34,6 +35,7 @@ import me.ChristopherW.core.custom.Dalek;
 import me.ChristopherW.core.custom.Doctor;
 import me.ChristopherW.core.custom.Piece;
 import me.ChristopherW.core.custom.Animations.TardisTeleport;
+import me.ChristopherW.core.custom.UI.GUIManager;
 import me.ChristopherW.core.entity.Entity;
 import me.ChristopherW.core.entity.Material;
 import me.ChristopherW.core.entity.Texture;
@@ -61,7 +63,7 @@ public class Game implements ILogic {
     public static Texture defaultTexture;
     public static Texture highlightedTileTexture;
 
-    private Entity dalekPrefab, doctorPrefab;
+    public Entity dalekPrefab, doctorPrefab, dalekCrashedPrefab;
     private Vector3f mouseWorldPos = new Vector3f(0, 0, 0);
 
     public Game() throws Exception {
@@ -124,21 +126,38 @@ public class Game implements ILogic {
         dalekPrefab = new Entity("Dalek", loader.loadModel("assets/models/dalek.obj", new Texture(loader.loadTexture("assets/textures/dalek.png"))), new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(0.4f,0.4f,0.4f), physicsSpace);
         dalekPrefab.getModel().getMaterial().setSpecular(1.0f);
         dalekPrefab.getModel().getMaterial().setReflectability(5f);
+        dalekCrashedPrefab = new Entity("DalekCrashed", loader.loadModel("assets/models/dalek_crashed.obj", new Texture(loader.loadTexture("assets/textures/dalek.png"))), new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(0.4f,0.4f,0.4f), physicsSpace);
+        dalekCrashedPrefab.getModel().getMaterial().setSpecular(1.0f);
+        dalekCrashedPrefab.getModel().getMaterial().setReflectability(5f);
         doctorPrefab = new Entity("Doctor", loader.loadModel("assets/models/doctor.obj", new Texture(loader.loadTexture("assets/textures/doctor.png"))), new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(0.7f,0.7f,0.7f), physicsSpace);
 
         board = new Board(12, entities, loader, physicsSpace);
         Entity tardis = new Entity("Tardis", loader.loadModel("assets/models/tardis.obj", new Texture(loader.loadTexture("assets/textures/tardis.png"))), new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(1f,1f,1f), physicsSpace);
         tardis.setVisible(false);
+        tardis.getModel().getMaterial().setSpecular(1.0f);
+        tardis.getModel().getMaterial().setReflectability(5f);
         entities.put("Tardis", tardis);
         TardisTeleport teleportAnim = new TardisTeleport();
         teleportAnim.setTardis(tardis);
         animations.put("Teleport", (Animation) teleportAnim);
+    }
+
+    public void generateGame() {
+        ArrayList<String> entitiesToRemove = new ArrayList<>();
+        for (String entity_name : entities.keySet()) {
+            if(entity_name.contains("Dalek"))
+                entitiesToRemove.add(entity_name);
+        }
+        for (String entity : entitiesToRemove) {
+            entities.remove(entity);
+        }
 
         board.setData(new Piece[12][12]);
-        for(int i = 0; i < 3; i++) {
+        for(int i = 0; i < GlobalVariables.DALEK_COUNT; i++) {
             int x = (int)(Math.random()*(12));
             int y = (int)(Math.random()*(12));
             board.getData()[y][x] = new Dalek(new Vector2i(x, y), new Entity(dalekPrefab), board);
+            ((Dalek) board.getData()[y][x]).setId(i);
         }
         
         int x = (int)(Math.random()*(12));
@@ -146,23 +165,35 @@ public class Game implements ILogic {
         board.getData()[y][x] = new Doctor(new Vector2i(x, y), new Entity(doctorPrefab), board);
     }
 
-    Vector2f startPos;
+    Vector2d startPos;
     public void mouseDown(long window, int button, int action, int mods, MouseInput input) {
+        if(GUIManager.currentScreen == "MainMenu")
+            return;
         if(button == GLFW.GLFW_MOUSE_BUTTON_1 && action == GLFW.GLFW_PRESS) {
-            startPos = new Vector2f(input.getDisplVec());
+            startPos = new Vector2d(input.getCurrentPos());
         }
         if(button == GLFW.GLFW_MOUSE_BUTTON_1 && action == GLFW.GLFW_RELEASE) {
-            if(startPos.distance(input.getDisplVec()) < 2f) {
+            if(startPos.distance(input.getCurrentPos()) <= 5) {
                 if(board.getDoctor() == null)
                     return;
                 if(board.getHighlightedTile() == null)
                     return;
-                if(((TardisTeleport) animations.get("Teleport")).isPlaying())
+                TardisTeleport anim = ((TardisTeleport) animations.get("Teleport"));
+                if(!anim.showDoctor && anim.isPlaying())
                     return;
                 float distance = (float) board.getHighlightedTile().distance(board.getDoctor().getPosition());
                 //System.out.println(distance + " to " + board.getHighlightedTile());
                 if(distance < 1.5f) {
+                    if(board.getData()[board.getHighlightedTile().y][board.getHighlightedTile().x] instanceof Dalek) {
+                        board.getData()[board.getDoctor().getPosition().y][board.getDoctor().getPosition().x] = null;
+                        return;
+                    }
+                        
                     board.getDoctor().setPosition(board.getHighlightedTile());
+                    ArrayList<Dalek> daleks = board.getDaleks();
+                    for (Dalek dalek : daleks) {
+                        dalek.advanceTowardsDoctor();
+                    }
                 } else {
                     int x = (int)(Math.random()*(12));
                     int y = (int)(Math.random()*(12));
@@ -175,24 +206,22 @@ public class Game implements ILogic {
         }
     }
 
-    public float rotationX = 0; // CAMERA ROTATION
-    public float rotationY = 0;
-
     public void keyDown(long window, int key, int scancode, int action, int mods) {
         
         if(key == GLFW.GLFW_KEY_SPACE && action == GLFW.GLFW_PRESS) {
-            
         }
     }
 
-    float rotX = 0;
-    float rotY = 0;
-    float zoom = 1;
+    float rotX = 45;
+    float rotY = 45;
+    float zoom = 2;
 
     @Override
     public void input(MouseInput input, double deltaTime, int frame) {
 
         if(input.isLeftButtonPress()) {
+            if(GUIManager.currentScreen == "MainMenu")
+                return;
             rotX += input.getDisplVec().y * GlobalVariables.MOUSE_SENSITIVITY_X;
             rotY += input.getDisplVec().x * GlobalVariables.MOUSE_SENSITIVITY_X;
             rotY = Utils.clamp(rotY, -90, 90);
@@ -225,7 +254,8 @@ public class Game implements ILogic {
     }
 
     public void onScroll(double dy) {
-        zoom += dy/2;
+        if(GUIManager.currentScreen != "MainMenu")
+            zoom -= dy/2;
     }
 
     float defaultRadius = 20f;
@@ -245,22 +275,23 @@ public class Game implements ILogic {
         camera.setPosition(orbitVec);
         camera.setRotation(rotY, rotX-90, camera.getRotation().z);
 
-        if(board.getHighlightedTile() != null && board.getDoctor() != null) {
-            if(board.getDoctor().getPosition().equals(board.getHighlightedTile()))
-                board.setHighlightedTile(null);
+        if(board.getDoctor() == null) {
+            entities.remove("Doctor");
+            GUIManager.currentScreen = "MainMenu";
+        }
+        if(board.getDaleks().isEmpty()) {
+            entities.remove("Doctor");
+            GUIManager.currentScreen = "MainMenu";
         }
 
-        int i = 0;
         for(int y = 0; y < board.getSize(); y++) {
             for(int x = 0; x < board.getSize(); x++) {
                 Vector3f position = board.getWorldSpaceCoord(x, y);
                 Entity space = board.getSpaceEntity(x, y);
                 if(position.distance(mouseWorldPos) < 1.1f) {
                     if(board.getDoctor() != null) {
-                        if(!board.getDoctor().getPosition().equals(new Vector2i(x, y))) {
-                            board.setHighlightedTile(new Vector2i(x, y));
-                            space.getModel().setMaterial(new Material(highlightedTileTexture));
-                        }
+                        board.setHighlightedTile(new Vector2i(x, y));
+                        space.getModel().setMaterial(new Material(highlightedTileTexture));
                     }
                 }
                 else {
@@ -272,7 +303,7 @@ public class Game implements ILogic {
                 Piece p = board.getData()[y][x];
                 if(p != null) {
                     Entity e = p.getEntity();
-                    if(e.getName() == "Doctor") {
+                    if(p instanceof Doctor) {
                         e.setPosition(new Vector3f(position.x, 0.5f, position.z));
                         e.setPosition(new Vector3f(position.x, 0.5f, position.z));
                         Vector2i highlightedTile = board.getHighlightedTile();
@@ -283,7 +314,6 @@ public class Game implements ILogic {
                         }
                         entities.put("Doctor", e);
                     } else {
-                        i++;
                         e.setPosition(new Vector3f(position.x, 0.75f, position.z));
                         Entity doctor = entities.get("Doctor");
                         if(doctor != null) {
@@ -291,7 +321,7 @@ public class Game implements ILogic {
                             float yaw = (float) Math.toDegrees(Math.atan2(rotVec.z, rotVec.x));
                             e.setRotation(0, -yaw + 90, 0);
                         }
-                        entities.put("Dalek" + i, e);
+                        entities.put("Dalek" + ((Dalek) p).getId(), e);
                     }
                 }
             }

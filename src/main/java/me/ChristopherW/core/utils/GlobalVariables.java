@@ -5,9 +5,11 @@ import java.awt.Color;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import me.ChristopherW.core.entity.Material;
+
 public class GlobalVariables {
-    public static final String TITLE = "Catch Game";
-    public static final String ICON_PATH = "assets/textures/icons/cube.png";
+    public static final String TITLE = "Dalek Catch Game";
+    public static final String ICON_PATH = "assets/textures/icons/dalek_icon.png";
     public static final Vector4f BG_COLOR = new Vector4f(0.6f, 0.6f,0.6f, 1f);
 
     public static final float GRAVITY = -39.2f;
@@ -17,6 +19,10 @@ public class GlobalVariables {
     public static float FRAMERATE = 120; // ABOVE 999, PHYSICS BREAKS
     public static boolean SHOW_FPS = false;
     public static boolean VSYNC = false;
+    public static int SHADOW_RES = 2048;
+    public static boolean SHADOW_FILTERING = true;
+    
+    public static int DALEK_COUNT = 3;
 
     public static final float FOV = (float) Math.toRadians(50);
     public static final float Z_NEAR = 0.01f;

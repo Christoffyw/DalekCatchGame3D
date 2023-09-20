@@ -2,7 +2,6 @@ package me.ChristopherW.core.custom;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import com.jme3.bullet.PhysicsSpace;
@@ -50,6 +49,19 @@ public class Board {
             }   
         }
         return null;
+    }
+
+    public ArrayList<Dalek> getDaleks() {
+        ArrayList<Dalek> daleks = new ArrayList<>();
+        for(int y = 0; y < size; y++) {
+            for(int x = 0; x < size; x++) {
+                if(data[y][x] instanceof Dalek) {
+                    if(!((Dalek) data[y][x]).hasCrashed())
+                        daleks.add((Dalek) data[y][x]);
+                }
+            }   
+        }
+        return daleks;
     }
 
     public Piece[][] getData() {

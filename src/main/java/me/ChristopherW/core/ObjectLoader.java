@@ -85,24 +85,6 @@ public class ObjectLoader {
         return model;
     }
 
-    public Vector3f getHoleLocation(Model model) {
-        // Scan a hole's ground OBJ data to find where hole is positioned in local space
-        Vector3f holePosition = new Vector3f(0,0,0);
-        String modelPath = model.getPath();
-        try {
-            Scanner scanner = new Scanner(new File(modelPath));
-            while(scanner.hasNext()) {
-                String line = scanner.nextLine();
-                String[] tokens = line.split(" ");
-                if(tokens[0].equalsIgnoreCase("h")) {
-                    holePosition = new Vector3f(Float.parseFloat(tokens[1]),Float.parseFloat(tokens[2]),Float.parseFloat(tokens[3]));
-                }
-            }
-        } catch(FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return holePosition;
-    }
     public Model loadModel(String modelPath) {
         // if no texture is provided, use the default texture
         return loadModel(modelPath, Game.defaultTexture);
